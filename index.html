@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Film Style Lab — Mobile (debug)</title>
+  <title>Film Style Lab — Mobile (debug clean)</title>
   <meta name="theme-color" content="#111111" />
   <style>
-    html,body{height:100%}body{margin:0;background:#f8fafc;color:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    html,body{height:100%}
+    body{margin:0;background:#f8fafc;color:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
     .container{max-width:1100px;margin:0 auto;padding:16px}
     .bar{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:20;display:flex;align-items:center;padding:12px 16px}
     button{appearance:none;border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:8px 12px;font-weight:600;margin-left:6px}
@@ -14,7 +15,7 @@
     button:disabled{opacity:.5}
     canvas{border:1px solid #e5e7eb;border-radius:8px;max-width:100%;height:auto}
     #preview{max-width:100%;height:auto;border:1px dashed #e5e7eb;border-radius:8px;margin-top:10px;display:none}
-    .log{margin-top:10px;font-size:12px;color:#111;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;white-space:pre-wrap}
+    #log{margin-top:10px;font-size:12px;color:#111;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;white-space:pre-wrap}
   </style>
 </head>
 <body>
@@ -28,10 +29,9 @@
   </header>
 
   <main class="container" style="padding:16px">
-    <canvas id=\"cv\"></canvas>
-    <img id=\"preview\" alt=\"원본 미리보기\" />
-    <div id=\"log\" class=\"log\"></div>
-    <div id="log" style="margin-top:12px;font-size:12px;color:#555"></div>
+    <canvas id="cv"></canvas>
+    <img id="preview" alt="원본 미리보기" />
+    <div id="log"></div>
   </main>
 
 <script>
@@ -40,141 +40,123 @@
   const ctx = cv.getContext('2d');
   const $log = document.getElementById('log');
   const $preview = document.getElementById('preview');
-  function log(msg){ try{ $log.textContent += (msg+'
-'); }catch(e){} }
-  if(!ctx){ alert('이 브라우저에서 2D 캔버스를 사용할 수 없어요. Chrome/Safari 최신 버전을 사용해 주세요.'); }
-  const log = document.getElementById('log');
   let currentImg = null;
 
-  function debug(msg){
+  function logMsg(msg){
     console.log(msg);
-    log.innerHTML += `<div>${msg}</div>`;
+    if ($log) $log.textContent += msg + "\n";
+  }
+
+  if(!ctx){
+    alert('이 브라우저에서 2D 캔버스를 사용할 수 없어요. Chrome/Safari 최신 버전을 사용해 주세요.');
+    return;
   }
 
   function drawAny(src){
     try{
       const w = src.naturalWidth || src.width;
       const h = src.naturalHeight || src.height;
-      if(!w || !h){ log('이미지 크기를 알 수 없음'); return; }
+      if(!w || !h){ logMsg('이미지 크기를 알 수 없음'); return; }
       const maxW = cv.parentElement.clientWidth || window.innerWidth || w;
-      const scale = Math.min(1, maxW/ w);
-      cv.width = Math.round(w*scale);
-      cv.height = Math.round(h*scale);
+      const scale = Math.min(1, maxW / w);
+      cv.width = Math.round(w * scale);
+      cv.height = Math.round(h * scale);
       ctx.clearRect(0,0,cv.width,cv.height);
-      ctx.drawImage(src,0,0,cv.width,cv.height);
-      log('캔버스에 그리기 완료: '+cv.width+'x'+cv.height);
-    }catch(e){ log('drawAny 오류: '+e.message); }
-  }
-    const maxW = cv.parentElement.clientWidth;
-    const scale = Math.min(1, maxW/w);
-    cv.width = w*scale;
-    cv.height = h*scale;
-    ctx.drawImage(src,0,0,cv.width,cv.height);
-    debug(`이미지 그리기 완료: ${w}x${h} → ${cv.width}x${cv.height}`);
+      ctx.drawImage(src, 0, 0, cv.width, cv.height);
+      logMsg(`캔버스에 그리기 완료: ${cv.width}x${cv.height}`);
+    }catch(e){ logMsg('drawAny 오류: ' + e.message); }
   }
 
-  document.getElementById('openBtn').onclick=()=>{
-    debug('파일 선택 열기 클릭');
+  // 파일 열기 버튼
+  document.getElementById('openBtn').onclick = () => {
+    logMsg('파일 선택 열기 클릭');
     document.getElementById('file').click();
   };
 
+  // 파일 선택 핸들러 (HEIC 안내 + createImageBitmap 우선)
   document.getElementById('file').addEventListener('change', function(e){
-    log('change 이벤트');
-    var files = e && e.target && e.target.files ? e.target.files : null;
-    var f = files && files[0];
-    if(!f){ log('파일 없음'); return; }
+    logMsg('change 이벤트');
+    const files = e && e.target && e.target.files ? e.target.files : null;
+    const f = files && files[0];
+    if(!f){ logMsg('파일 없음'); return; }
 
-    var name = (f.name||'').toLowerCase();
-    var type = (f.type||'').toLowerCase();
-    log('선택: '+name+' ('+type+'), '+(f.size||0)+' bytes');
+    const name = (f.name||'').toLowerCase();
+    const type = (f.type||'').toLowerCase();
+    logMsg(`선택: ${name} (${type}), ${(f.size||0)} bytes`);
 
-    if(!(type.indexOf('image/')===0) && !/(\.jpg|\.jpeg|\.png|\.webp)$/i.test(name)){
+    if(!(type.indexOf('image/')===0) && !/\.(jpg|jpeg|png|webp)$/i.test(name)){
       alert('이미지 파일만 선택해 주세요 (JPG/PNG/WebP).');
-      log('이미지 아님: 차단');
+      logMsg('이미지 아님: 차단');
       return;
     }
-    if(/\.(heic|heif)$/i.test(name) || type.indexOf('heic')>-1 || type.indexOf('heif')>-1){
+    if(/\.(heic|heif)$/i.test(name) || type.includes('heic') || type.includes('heif')){
       alert('HEIC/HEIF는 Chrome에서 바로 열리지 않을 수 있어요. JPG/PNG/WebP로 사용해 주세요.');
-      log('HEIC/HEIF 차단');
+      logMsg('HEIC/HEIF 차단');
       return;
     }
 
-    // 원본 미리보기 (디버그용)
+    // 썸네일 미리보기
     try{
-      var url = URL.createObjectURL(f);
+      const url = URL.createObjectURL(f);
       $preview.src = url; $preview.style.display='block';
-      log('preview 설정 완료 (ObjectURL)');
-    }catch(e){ log('preview 설정 실패: '+e.message); }
+      logMsg('preview 설정 완료 (ObjectURL)');
+    }catch(err){ logMsg('preview 설정 실패: ' + err.message); }
 
-    if('createImageBitmap' in window){
-      window.createImageBitmap(f).then(function(bm){
-        log('createImageBitmap 성공: '+bm.width+'x'+bm.height);
-        currentImg = bm; drawAny(bm); document.getElementById('saveBtn').disabled = false;
-      }).catch(function(err){
-        log('createImageBitmap 실패: '+err);
-        var url2 = URL.createObjectURL(f);
-        var img = new Image();
-        img.onload = function(){ currentImg = img; drawAny(img); document.getElementById('saveBtn').disabled = false; URL.revokeObjectURL(url2); log('Image() 경로 성공'); };
-        img.onerror = function(){ alert('이미지를 불러오지 못했어요. JPG/PNG/WebP 파일인지 확인해 주세요.'); URL.revokeObjectURL(url2); log('Image() 경로 실패'); };
+    // 디코딩
+    if ('createImageBitmap' in window){
+      createImageBitmap(f).then(bm=>{
+        logMsg(`createImageBitmap 성공: ${bm.width}x${bm.height}`);
+        currentImg = bm;
+        drawAny(bm);
+        document.getElementById('saveBtn').disabled = false;
+      }).catch(err=>{
+        logMsg('createImageBitmap 실패: ' + err);
+        const url2 = URL.createObjectURL(f);
+        const img = new Image();
+        img.onload = function(){
+          currentImg = img; drawAny(img);
+          document.getElementById('saveBtn').disabled = false;
+          URL.revokeObjectURL(url2);
+          logMsg('Image() 경로 성공');
+        };
+        img.onerror = function(){
+          alert('이미지를 불러오지 못했어요. JPG/PNG/WebP 파일인지 확인해 주세요.');
+          URL.revokeObjectURL(url2);
+          logMsg('Image() 경로 실패');
+        };
         img.src = url2;
       });
     } else {
-      log('createImageBitmap 미지원 → Image() 경로 사용');
-      var url3 = URL.createObjectURL(f);
-      var img2 = new Image();
-      img2.onload = function(){ currentImg = img2; drawAny(img2); document.getElementById('saveBtn').disabled = false; URL.revokeObjectURL(url3); log('Image() 로드 성공'); };
-      img2.onerror = function(){ alert('이미지를 불러오지 못했어요. JPG/PNG/WebP 파일인지 확인해 주세요.'); URL.revokeObjectURL(url3); log('Image() 로드 실패'); };
+      logMsg('createImageBitmap 미지원 → Image() 경로 사용');
+      const url3 = URL.createObjectURL(f);
+      const img2 = new Image();
+      img2.onload = function(){
+        currentImg = img2; drawAny(img2);
+        document.getElementById('saveBtn').disabled = false;
+        URL.revokeObjectURL(url3);
+        logMsg('Image() 로드 성공');
+      };
+      img2.onerror = function(){
+        alert('이미지를 불러오지 못했어요. JPG/PNG/WebP 파일인지 확인해 주세요.');
+        URL.revokeObjectURL(url3);
+        logMsg('Image() 로드 실패');
+      };
       img2.src = url3;
-    }
-  }); return; }
-
-    debug(`파일 선택됨: ${f.name}, type=${f.type}`);
-
-    var name = (f.name||'').toLowerCase();
-    var type = (f.type||'').toLowerCase();
-
-    if(!(type.indexOf('image/')===0) && !/(\.jpg|\.jpeg|\.png|\.webp)$/i.test(name)){
-      alert('이미지 파일만 선택해 주세요 (JPG/PNG/WebP).');
-      return;
-    }
-    if(/\.(heic|heif)$/i.test(name) || type.indexOf('heic')>-1 || type.indexOf('heif')>-1){
-      alert('HEIC/HEIF는 Chrome에서 바로 열리지 않을 수 있어요. JPG/PNG/WebP로 사용해 주세요.');
-      return;
-    }
-
-    if('createImageBitmap' in window){
-      debug('createImageBitmap 시도');
-      window.createImageBitmap(f).then(function(bm){
-        debug('createImageBitmap 성공');
-        currentImg = bm; drawAny(bm); document.getElementById('saveBtn').disabled = false;
-      }).catch(function(err){
-        debug('createImageBitmap 실패: '+err);
-        var url = URL.createObjectURL(f);
-        var img = new Image();
-        img.onload = function(){ debug('Image() 로드 성공'); currentImg = img; drawAny(img); document.getElementById('saveBtn').disabled = false; URL.revokeObjectURL(url); };
-        img.onerror = function(){ debug('Image() 로드 실패'); alert('이미지를 불러오지 못했어요. JPG/PNG/WebP 파일인지 확인해 주세요.'); URL.revokeObjectURL(url); };
-        img.src = url;
-      });
-    } else {
-      debug('createImageBitmap 없음, ObjectURL 경로 사용');
-      var url = URL.createObjectURL(f);
-      var img = new Image();
-      img.onload = function(){ debug('Image() 로드 성공'); currentImg = img; drawAny(img); document.getElementById('saveBtn').disabled = false; URL.revokeObjectURL(url); };
-      img.onerror = function(){ debug('Image() 로드 실패'); alert('이미지를 불러오지 못했어요. JPG/PNG/WebP 파일인지 확인해 주세요.'); URL.revokeObjectURL(url); };
-      img.src = url;
     }
   });
 
-  document.getElementById('saveBtn').onclick=()=>{
-    if(!currentImg){ debug('저장 시도했지만 currentImg 없음'); return; }
-    const a=document.createElement('a');
-    a.href=cv.toDataURL('image/jpeg',0.95);
-    a.download='film-style-'+Date.now()+'.jpg';
+  // 저장
+  document.getElementById('saveBtn').onclick = () => {
+    if(!currentImg){ logMsg('저장 시도했지만 currentImg 없음'); return; }
+    const a = document.createElement('a');
+    a.href = cv.toDataURL('image/jpeg', 0.95);
+    a.download = 'film-style-' + Date.now() + '.jpg';
     a.click();
-    debug('이미지 저장 클릭');
+    logMsg('이미지 저장 클릭');
   };
 
-  window.addEventListener('resize',()=>{ if(currentImg) drawAny(currentImg); });
+  // 리사이즈 시 다시 맞춰 그리기
+  window.addEventListener('resize', ()=>{ if(currentImg) drawAny(currentImg); });
 })();
 </script>
 </body>
