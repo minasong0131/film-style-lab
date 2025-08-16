@@ -3,30 +3,29 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Film Style Lab — v3.2 (필터 포함)</title>
+  <title>Film Style Lab — v4 (스플릿톤·컬러밸런스·커브)</title>
   <meta name="theme-color" content="#111111" />
   <style>
     html,body{height:100%}
     body{margin:0;background:#f8fafc;color:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-    .container{max-width:1100px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 2fr 1fr;gap:16px}
+    .container{max-width:1200px;margin:0 auto;padding:16px;display:grid;grid-template-columns:1fr 2fr 1fr;gap:16px}
     .bar{position:sticky;top:0;background:#fff;border-bottom:1px solid #e5e7eb;z-index:20;display:flex;align-items:center;padding:12px 16px}
-    button,input[type=file]{appearance:none;border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:8px 12px;font-weight:600;margin-left:6px}
+    button,input[type=file]{appearance:none;border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:8px 12px;font-weight:600;margin-left:6px;cursor:pointer}
     button.ghost{background:#fff;color:#111}
     button:disabled{opacity:.5}
     canvas{border:1px solid #e5e7eb;border-radius:8px;max-width:100%;height:auto}
-    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:8px;overflow:auto}
-    .preset-btn{display:block;width:100%;margin:4px 0;padding:8px;border:1px solid #ddd;border-radius:6px;background:#fafafa;cursor:pointer;text-align:left}
-    .preset-btn:hover{background:#eee}
-    label.slider{display:block;margin:6px 0;font-size:12px}
+    .panel{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px;overflow:auto}
+    .panel h4{margin:4px 0 8px}
+    .preset-btn{display:block;width:100%;margin:6px 0;padding:10px;border:1px solid #cbd5e1;border-radius:8px;background:#ffffff;color:#111;font-weight:700;cursor:pointer;text-align:left}
+    .preset-btn:hover{background:#f1f5f9}
+    label.slider{display:block;margin:8px 0;font-size:12px}
+    .group{border-top:1px dashed #e5e7eb;margin-top:10px;padding-top:8px}
   </style>
 </head>
 <body>
   <header class="bar">
     <strong style="font-size:16px">🎞️ Film Style Lab</strong>
     <div style="margin-left:auto;display:flex;align-items:center">
-      <input id="file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" style="display:none" />
-      <label for="file" class="ghost" style="cursor:pointer">사진 열기</label>
-      <button id="openBtn" class="ghost">파일 선택</button>
       <input id="fileDirect" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" />
       <button id="saveBtn" disabled>이미지 저장</button>
     </div>
@@ -48,9 +47,39 @@
 
     <div class="panel">
       <h4>세부 조정</h4>
-      <label class="slider">노출 <input type="range" id="exp" min="-100" max="100" value="0"></label>
-      <label class="slider">대비 <input type="range" id="contrast" min="-100" max="100" value="0"></label>
-      <label class="slider">채도 <input type="range" id="satur" min="-100" max="100" value="0"></label>
+      <div class="group">
+        <label class="slider">노출 <input type="range" id="exp" min="-100" max="100" value="0"></label>
+        <label class="slider">밝기 <input type="range" id="bright" min="-100" max="100" value="0"></label>
+        <label class="slider">대비 <input type="range" id="contrast" min="-100" max="100" value="0"></label>
+        <label class="slider">채도 <input type="range" id="satur" min="-100" max="100" value="0"></label>
+        <label class="slider">비브란스 <input type="range" id="vibr" min="-100" max="100" value="0"></label>
+        <label class="slider">색상(Hue) <input type="range" id="hue" min="-180" max="180" value="0"></label>
+        <label class="slider">색온도(따뜻/차가움) <input type="range" id="temp" min="-100" max="100" value="0"></label>
+        <label class="slider">틴트(그린↔마젠타) <input type="range" id="tint" min="-100" max="100" value="0"></label>
+      </div>
+
+      <div class="group">
+        <strong style="font-size:13px">스플릿 톤</strong>
+        <label class="slider">그림자 Hue <input type="range" id="stShHue" min="-180" max="180" value="-20"></label>
+        <label class="slider">그림자 Sat <input type="range" id="stShSat" min="0" max="100" value="20"></label>
+        <label class="slider">하이라이트 Hue <input type="range" id="stHiHue" min="-180" max="180" value="20"></label>
+        <label class="slider">하이라이트 Sat <input type="range" id="stHiSat" min="0" max="100" value="15"></label>
+        <label class="slider">톤 밸런스 (− 그림자 / + 하이라이트) <input type="range" id="stBal" min="-100" max="100" value="0"></label>
+      </div>
+
+      <div class="group">
+        <strong style="font-size:13px">컬러 밸런스 (RGB 게인)</strong>
+        <label class="slider">Red <input type="range" id="gainR" min="-100" max="100" value="0"></label>
+        <label class="slider">Green <input type="range" id="gainG" min="-100" max="100" value="0"></label>
+        <label class="slider">Blue <input type="range" id="gainB" min="-100" max="100" value="0"></label>
+      </div>
+
+      <div class="group">
+        <strong style="font-size:13px">커브 (톤별 보정)</strong>
+        <label class="slider">Shadows <input type="range" id="curveS" min="-100" max="100" value="0"></label>
+        <label class="slider">Midtones <input type="range" id="curveM" min="-100" max="100" value="0"></label>
+        <label class="slider">Highlights <input type="range" id="curveH" min="-100" max="100" value="0"></label>
+      </div>
     </div>
   </main>
 
@@ -62,46 +91,132 @@
 
   function draw(src){
     if(!src) return;
-    const w=src.naturalWidth||src.width; const h=src.naturalHeight||src.height;
+    const w=src.naturalWidth||src.width, h=src.naturalHeight||src.height;
     cv.width=w; cv.height=h;
     ctx.drawImage(src,0,0,w,h);
   }
+
+  // HSL helpers
+  function rgb2hsl(r,g,b){
+    r/=255; g/=255; b/=255;
+    const max=Math.max(r,g,b), min=Math.min(r,g,b);
+    let h,s,l=(max+min)/2;
+    if(max===min){ h=s=0; }
+    else{
+      const d=max-min;
+      s = l>0.5 ? d/(2-max-min) : d/(max+min);
+      switch(max){
+        case r: h=(g-b)/d + (g<b?6:0); break;
+        case g: h=(b-r)/d + 2; break;
+        case b: h=(r-g)/d + 4; break;
+      }
+      h/=6;
+    }
+    return [h,s,l];
+  }
+  function hsl2rgb(h,s,l){
+    function hue2rgb(p,q,t){ if(t<0) t+=1; if(t>1) t-=1; if(t<1/6) return p+(q-p)*6*t; if(t<1/2) return q; if(t<2/3) return p+(q-p)*(2/3 - t)*6; return p; }
+    let r,g,b;
+    if(s===0){ r=g=b=l; }
+    else{
+      const q = l < 0.5 ? l*(1+s) : l + s - l*s;
+      const p = 2*l - q;
+      r = hue2rgb(p,q,h+1/3);
+      g = hue2rgb(p,q,h);
+      b = hue2rgb(p,q,h-1/3);
+    }
+    return [r*255,g*255,b*255];
+  }
+
+  function smoothstep(a,b,x){ x=Math.min(1,Math.max(0,(x-a)/(b-a))); return x*x*(3-2*x); }
 
   function applyFilters(){
     if(!original) return;
     draw(original);
     const imgData=ctx.getImageData(0,0,cv.width,cv.height);
     const d=imgData.data;
-    const exp=parseInt(document.getElementById('exp').value,10);
-    const contrast=parseInt(document.getElementById('contrast').value,10);
-    const satur=parseInt(document.getElementById('satur').value,10);
 
-    // precompute contrast factor
-    const factor=(259*(contrast+255))/(255*(259-contrast));
+    const exp = +document.getElementById('exp').value||0;
+    const bri = +document.getElementById('bright').value||0;
+    const ctr = +document.getElementById('contrast').value||0;
+    const sat = +document.getElementById('satur').value||0;
+    const vib = +document.getElementById('vibr').value||0;
+    const hue = +document.getElementById('hue').value||0;
+    const tmp = +document.getElementById('temp').value||0;
+    const tnt = +document.getElementById('tint').value||0;
+
+    const stShHue = +document.getElementById('stShHue').value||0;
+    const stShSat = +document.getElementById('stShSat').value||0;
+    const stHiHue = +document.getElementById('stHiHue').value||0;
+    const stHiSat = +document.getElementById('stHiSat').value||0;
+    const stBal   = +document.getElementById('stBal').value||0;
+
+    const gainR = +document.getElementById('gainR').value||0;
+    const gainG = +document.getElementById('gainG').value||0;
+    const gainB = +document.getElementById('gainB').value||0;
+
+    const curveS = +document.getElementById('curveS').value||0;
+    const curveM = +document.getElementById('curveM').value||0;
+    const curveH = +document.getElementById('curveH').value||0;
+
+    const cFactor=(259*(ctr+255))/(255*(259-ctr));
+
+    // Precompute split-tone colors (normalized multipliers around 1.0)
+    const stS = (stShSat/100); const stH=(stHiSat/100);
+    const stSh = (function(){ const [r,g,b]=hsl2rgb(((stShHue%360+360)%360)/360, stS, 0.5); return [r/127.5, g/127.5, b/127.5]; })();
+    const stHi = (function(){ const [r,g,b]=hsl2rgb(((stHiHue%360+360)%360)/360, stH, 0.5); return [r/127.5, g/127.5, b/127.5]; })();
 
     for(let i=0;i<d.length;i+=4){
       let r=d[i], g=d[i+1], b=d[i+2];
 
-      // exposure (simple add; clamp later)
-      r+=exp; g+=exp; b+=exp;
+      // exposure + brightness
+      r+=exp+bri; g+=exp+bri; b+=exp+bri;
 
       // contrast
-      r=factor*(r-128)+128;
-      g=factor*(g-128)+128;
-      b=factor*(b-128)+128;
+      r=cFactor*(r-128)+128; g=cFactor*(g-128)+128; b=cFactor*(b-128)+128;
 
-      // saturation
-      const avg=(r+g+b)/3;
-      const s=1+satur/100;
-      r=avg+(r-avg)*s;
-      g=avg+(g-avg)*s;
-      b=avg+(b-avg)*s;
+      // white balance (temperature/tint)
+      const T = tmp/100, Ti = tnt/100;
+      r *= (1 + 0.15*T + 0.10*Ti);
+      g *= (1 - 0.20*Ti);
+      b *= (1 - 0.15*T - 0.10*Ti);
+
+      // RGB gains (color balance)
+      r *= (1 + gainR/100);
+      g *= (1 + gainG/100);
+      b *= (1 + gainB/100);
+
+      // HSL operations: saturation, vibrance, hue shift
+      let [hh,ss,ll]=rgb2hsl(r,g,b);
+      hh = (hh + hue/360); hh -= Math.floor(hh);
+      ss = ss * (1 + sat/100); ss = Math.min(1,Math.max(0,ss));
+      ss = ss + (vib/100)*(1 - ss); ss = Math.min(1,Math.max(0,ss));
+      ;[r,g,b]=hsl2rgb(hh,ss,ll);
+
+      // Split toning
+      const lum = (0.2126*r + 0.7152*g + 0.0722*b)/255; // 0..1
+      const bal = stBal/100;
+      const wSh = 1.0 - smoothstep(0.35+bal*0.2, 0.65+bal*0.2, lum);
+      const wHi = smoothstep(0.35+bal*0.2, 0.65+bal*0.2, lum);
+      r = r*(1 - wSh*stS) + r*stSh[0]*wSh*stS; 
+      g = g*(1 - wSh*stS) + g*stSh[1]*wSh*stS;
+      b = b*(1 - wSh*stS) + b*stSh[2]*wSh*stS;
+      r = r*(1 - wHi*stH) + r*stHi[0]*wHi*stH; 
+      g = g*(1 - wHi*stH) + g*stHi[1]*wHi*stH;
+      b = b*(1 - wHi*stH) + b*stHi[2]*wHi*stH;
+
+      // Tone curve (shadows/midtones/highlights)
+      const wS = 1.0 - smoothstep(0.25,0.55,lum);
+      const wH = smoothstep(0.45,0.75,lum);
+      const wM = Math.max(0,1 - wS - wH);
+      const curveScale = 0.8; // strength
+      const off = (curveS/100*wS + curveM/100*wM + curveH/100*wH) * 255 * curveScale;
+      r += off; g += off; b += off;
 
       // clamp
       d[i]  = r<0?0:r>255?255:r;
       d[i+1]= g<0?0:g>255?255:g;
       d[i+2]= b<0?0:b>255?255:b;
-      // d[i+3] alpha stays
     }
     ctx.putImageData(imgData,0,0);
   }
@@ -109,46 +224,34 @@
   function handleFile(f){
     const url=URL.createObjectURL(f);
     const img=new Image();
-    img.onload=function(){
-      original=img;
-      draw(img);
-      document.getElementById('saveBtn').disabled=false;
-    };
-    img.onerror=function(){
-      alert('이미지를 불러오지 못했어요. JPG/PNG/WebP 파일인지 확인해 주세요.');
-    };
+    img.onload=function(){ original=img; draw(img); document.getElementById('saveBtn').disabled=false; };
+    img.onerror=function(){ alert('이미지를 불러오지 못했어요. JPG/PNG/WebP 파일인지 확인해 주세요.'); };
     img.src=url;
   }
 
-  // file inputs
-  document.getElementById('file').addEventListener('change',e=>{
-    if(e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
-  });
-  document.getElementById('fileDirect').addEventListener('change',e=>{
-    if(e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
-  });
-  document.getElementById('openBtn').onclick=()=>document.getElementById('file').click();
+  document.getElementById('fileDirect').addEventListener('change',e=>{ if(e.target.files && e.target.files[0]) handleFile(e.target.files[0]); });
 
-  // presets
+  // Presets (업데이트: 새 파라미터 포함)
   document.querySelectorAll('.preset-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
       if(!original) return;
       const f=btn.dataset.filter;
-      if(f==='wes'){exp.value=10;contrast.value=20;satur.value=30;}
-      if(f==='blade'){exp.value=-10;contrast.value=40;satur.value=-20;}
-      if(f==='lala'){exp.value=5;contrast.value=15;satur.value=40;}
-      if(f==='matrix'){exp.value=0;contrast.value=30;satur.value=-40;}
-      if(f==='her'){exp.value=0;contrast.value=0;satur.value=20;}
+      const sets={exp:0,bright:0,contrast:0,satur:0,vibr:0,hue:0,temp:0,tint:0,stShHue:-20,stShSat:20,stHiHue:20,stHiSat:15,stBal:0,gainR:0,gainG:0,gainB:0,curveS:0,curveM:0,curveH:0};
+      if(f==='wes')   Object.assign(sets,{exp:10,bright:5,contrast:20,satur:25,vibr:15,hue:5,temp:12,tint:8, stShHue:-10,stShSat:18, stHiHue:30,stHiSat:10, stBal:-10, gainR:4,gainG:0,gainB:-2, curveS:5,curveM:8,curveH:-2});
+      if(f==='blade') Object.assign(sets,{exp:-5,bright:0,contrast:35,satur:-20,vibr:-10,hue:-12,temp:28,tint:-6, stShHue:30,stShSat:10, stHiHue:25,stHiSat:6,  stBal:8,  gainR:6,gainG:-2,gainB:-8, curveS:10,curveM:-5,curveH:-10});
+      if(f==='lala')  Object.assign(sets,{exp:5,bright:6,contrast:15,satur:35,vibr:12,hue:8,temp:-10,tint:6, stShHue:-30,stShSat:12, stHiHue:10,stHiSat:8,  stBal:0,  gainR:0,gainG:2,gainB:6,  curveS:-5,curveM:5,curveH:8});
+      if(f==='matrix')Object.assign(sets,{exp:0,bright:0,contrast:28,satur:-45,vibr:-20,hue:120,temp:-6,tint:-18, stShHue:140,stShSat:18, stHiHue:110,stHiSat:10, stBal:5,  gainR:-10,gainG:0,gainB:6, curveS:8,curveM:-8,curveH:6});
+      if(f==='her')   Object.assign(sets,{exp:0,bright:5,contrast:0,satur:20,vibr:10,hue:-5,temp:20,tint:12, stShHue:-5,stShSat:10,  stHiHue:15,stHiSat:12, stBal:-5, gainR:6,gainG:0,gainB:-2, curveS:-2,curveM:6,curveH:0});
+      for(const k in sets){ const el=document.getElementById(k); if(el) el.value=sets[k]; }
       applyFilters();
     });
   });
 
-  // sliders
-  ['exp','contrast','satur'].forEach(id=>{
-    document.getElementById(id).addEventListener('input',applyFilters);
-  });
+  // Sliders
+  ['exp','bright','contrast','satur','vibr','hue','temp','tint','stShHue','stShSat','stHiHue','stHiSat','stBal','gainR','gainG','gainB','curveS','curveM','curveH']
+    .forEach(id=>{ const el=document.getElementById(id); el.addEventListener('input',applyFilters); });
 
-  // save
+  // Save
   document.getElementById('saveBtn').onclick=()=>{
     if(!original) return;
     const a=document.createElement('a');
