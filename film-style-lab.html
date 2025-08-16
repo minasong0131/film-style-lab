@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Film Style Lab — Mobile</title>
+  <meta name="theme-color" content="#111111" />
+  <style>
+    html,body{height:100%}body{margin:0;background:linear-gradient(#f8fafc,#fff);color:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    .container{max-width:1100px;margin:0 auto;padding:16px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    .row{display:grid;gap:12px}
+    @media (min-width: 960px){.row{grid-template-columns: 280px 1fr 320px}}
+    .bar{position:sticky;top:0;backdrop-filter:saturate(180%) blur(10px);background:rgba(255,255,255,.8);border-bottom:1px solid #e5e7eb;z-index:20}
+    button, input[type="file"]+label{appearance:none;border:1px solid #111;background:#111;color:#fff;border-radius:12px;padding:10px 14px;font-weight:600}
+    button.ghost{background:#fff;color:#111}
+    button:disabled{opacity:.5}
+    .pill{border:1px solid #e5e7eb;border-radius:999px;padding:4px 8px;font-size:12px}
+    .ctrl label{font-size:13px;color:#374151;display:flex;justify-content:space-between;margin:8px 0 4px}
+    .ctrl input[type=range]{width:100%}
+    .grid{display:grid;gap:8px}
+    .thumbs{display:flex;gap:8px;overflow:auto}
+    .thumbs img{height:64px;width:96px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb}
+    .splitHandle{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.15)}
+    .handleBtn{position:absolute;top:50%;left:-18px;transform:translateY(-50%);width:36px;height:36px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+  </style>
+  <!-- React & ReactDOM from CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <div class="container" style="display:flex;gap:8px;align-items:center;padding:12px 16px">
+      <strong style="font-size:16px">🎞️ Film Style Lab</strong>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <input id="file" type="file" accept="image/*" capture="environment" style="display:none" />
+        <label for="file">사진 열기</label>
+        <button id="saveBtn" disabled>이미지 저장</button>
+        <button id="installBtn" class="ghost" style="display:none">홈 화면에 추가</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding:16px 16px 40px">
+    <div class="row">
+      <!-- Presets -->
+      <section class="card" style="padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <h3 style="margin:0;font-size:15px">🎬 영화 스타일 프리셋</h3>
+        </div>
+        <div id="presets" class="grid"></div>
+      </section>
+
+      <!-- Viewer -->
+      <section class="card" style="padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 8px">
+          <div style="font-weight:600">프리뷰</div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px"><input id="splitToggle" type="checkbox" checked /> 전/후 스플릿</label>
+        </div>
+        <div id="wrap" class="wrap" style="position:relative;background:#f3f4f6;border-radius:12px;overflow:hidden">
+          <canvas id="cv" style="display:block;width:100%;height:auto"></canvas>
+          <img id="beforeImg" alt="before" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;clip-path:inset(0 50% 0 0);display:none" />
+          <div id="split" class="splitHandle" style="left:50%;display:none">
+            <div class="handleBtn" title="드래그"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Controls -->
+      <section class="card ctrl" style="padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <h3 style="margin:0;font-size:15px">세부 조정</h3>
+          <button id="resetBtn" class="ghost">프리셋 값으로</button>
+        </div>
+        <div id="sliders" class="grid"></div>
+        <div class="card" style="padding:12px;margin-top:12px">
+          <strong style="font-size:14px">도움말·주의</strong>
+          <ul style="margin:8px 0 0 18px;font-size:13px;color:#374151;line-height:1.5">
+            <li>모든 작업은 <b>로컬</b>에서만 이뤄집니다. 사진은 외부로 업로드되지 않아요.</li>
+            <li>영화 스타일은 공개 색감 특징을 <b>근사</b>한 실험용입니다(실제 LUT/상표 미포함).</li>
+            <li>iOS에선 다운로드 시 사진앱이 아니라 ‘파일’로 저장될 수 있어요.</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </main>
+
+<script>
+(function(){
+  // --- State & Utilities ---
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const clamp = (x,a,b)=>Math.min(b,Math.max(a,x));
+  const S = {
+    img: null,
+    imgURL: null,
+    params: null,
+    presetId: 'wes-pastel',
+    seed: Math.random()*1000,
+    split: true,
+    splitX: 0.5,
+    refs: JSON.parse(localStorage.getItem('fsl.refs')||'{}'),
+  };
+  const saveParams = ()=> localStorage.setItem('fsl.params', JSON.stringify(S.params));
+  const savePreset = ()=> localStorage.setItem('fsl.preset', JSON.stringify(S.presetId));
+
+  // --- Presets ---
+  const PRESETS = [
+    { id:'wes-pastel', name:'Wes Anderson · Pastel', desc:'파스텔 톤, 따뜻함', params:{exposure:0.05,contrast:0.92,saturation:1.12,temp:0.15,tint:0.05,vibrance:0.15,gamma:1.05,grain:0.15,vignette:0.08,stShadow:[0.85,1.05,1.10],stHighlight:[1.05,0.95,1.08],stBalance:-0.1} },
+    { id:'grand-budapest', name:'Grand Budapest · Pink', desc:'핑크 하이라이트', params:{exposure:0.08,contrast:1.0,saturation:1.18,temp:0.10,tint:0.12,vibrance:0.20,gamma:1.05,grain:0.12,vignette:0.06,stShadow:[0.9,1.0,1.15],stHighlight:[1.08,0.96,1.06],stBalance:0.0} },
+    { id:'blade2049', name:'Blade Runner 2049 · Haze', desc:'웜 헤이즈, 비네팅', params:{exposure:0.10,contrast:0.95,saturation:0.85,temp:0.28,tint:-0.05,vibrance:-0.05,gamma:1.1,grain:0.18,vignette:0.35,stShadow:[1.05,0.95,0.85],stHighlight:[1.1,1.0,0.9],stBalance:0.1} },
+    { id:'madmax', name:'Mad Max · Teal/Orange', desc:'대비↑ 티얼/오렌지', params:{exposure:0.1,contrast:1.18,saturation:1.05,temp:0.18,tint:-0.02,vibrance:0.1,gamma:1.08,grain:0.2,vignette:0.25,stShadow:[0.7,1.05,1.2],stHighlight:[1.2,1.05,0.9],stBalance:0.05} },
+    { id:'lalaland', name:'La La Land · Night Blue', desc:'쿨 블루', params:{exposure:-0.02,contrast:1.02,saturation:1.08,temp:-0.1,tint:0.08,vibrance:0.12,gamma:1.07,grain:0.1,vignette:0.18,stShadow:[0.85,0.95,1.2],stHighlight:[1.02,0.98,1.05],stBalance:0.05} },
+    { id:'matrix', name:'The Matrix · Green', desc:'그린 캐스트', params:{exposure:0.0,contrast:1.12,saturation:0.82,temp:-0.05,tint:-0.18,vibrance:-0.05,gamma:1.12,grain:0.12,vignette:0.2,stShadow:[0.85,1.0,0.8],stHighlight:[0.95,1.02,0.9],stBalance:0.0} },
+    { id:'her', name:'Her · Warm Pink', desc:'따뜻한 핑크', params:{exposure:0.05,contrast:0.96,saturation:1.05,temp:0.22,tint:0.1,vibrance:0.1,gamma:1.03,grain:0.08,vignette:0.08,stShadow:[1.0,0.95,0.95],stHighlight:[1.12,0.98,1.02],stBalance:0.1} },
+  ];
+
+  // restore params
+  try{ const p = JSON.parse(localStorage.getItem('fsl.params')); if(p) S.params = p; }catch{}
+  if(!S.params) S.params = {...PRESETS[0].params};
+  try{ const pid = JSON.parse(localStorage.getItem('fsl.preset')); if(pid) S.presetId = pid; }catch{}
+
+  // --- WebGL setup ---
+  const cv = $('#cv');
+  const gl = cv.getContext('webgl', {preserveDrawingBuffer:true});
+  if(!gl){ alert('이 기기에서 WebGL을 사용할 수 없어요. 크롬/사파리를 권장합니다.'); }
+
+  const FRAG = `precision highp float;uniform sampler2D u_tex;uniform vec2 u_res;uniform float u_exposure,u_contrast,u_saturation,u_temp,u_tint,u_vibrance,u_gamma,u_grain,u_vignette,u_stBalance,u_seed;uniform vec3 u_stShadow,u_stHighlight;float luma(vec3 c){return dot(c,vec3(0.2126,0.7152,0.0722));}vec3 applyExposure(vec3 c,float e){return c*pow(2.0,e);}vec3 applyContrast(vec3 c,float k){return (c-0.5)*k+0.5;}vec3 applySaturation(vec3 c,float s){float g=luma(c);return mix(vec3(g),c,s);}vec3 applyVibrance(vec3 c,float v){float g=luma(c);float sat=length(c-vec3(g));float k=1.0-clamp(sat*3.0,0.0,1.0);return mix(c,applySaturation(c,1.0+v),k);}vec3 temperatureTint(vec3 c,float t,float ti){vec3 wb=vec3(1.0+0.15*t-0.05*ti,1.0-0.02*ti,1.0-0.15*t-0.05*ti);return c*wb;}float hash(vec2 p){p=fract(p*vec2(123.34,345.45));p+=dot(p,p+34.345);return fract(p.x*p.y);}vec3 splitTone(vec3 c,vec3 sh,vec3 hi,float bal){float g=luma(c);float wSh=clamp(1.0-(g+bal*0.5),0.0,1.0);float wHi=clamp(g+bal*0.5,0.0,1.0);c=normalize(c+1e-6)*length(c);c=mix(c,c*sh,wSh*0.6);c=mix(c,c*hi,wHi*0.6);return c;}vec3 vignette(vec2 uv,vec3 c,float a){if(a<=0.0) return c;vec2 p=uv*2.0-1.0;float r=dot(p,p);float v=smoothstep(0.8,0.2,1.0-r);v=mix(1.0,v,a);return c*v;}void main(){vec2 uv=gl_FragCoord.xy/u_res;vec3 col=texture2D(u_tex,uv).rgb;col=applyExposure(col,u_exposure);col=temperatureTint(col,u_temp,u_tint);col=applyContrast(col,u_contrast);col=applyVibrance(col,u_vibrance);col=applySaturation(col,u_saturation);col=splitTone(col,u_stShadow,u_stHighlight,u_stBalance);if(u_grain>0.0){float n=hash(uv*u_res+u_seed);col+=(n-0.5)*0.08*u_grain;}col=pow(max(col,0.0),vec3(1.0/u_gamma));col=clamp(col,0.0,1.0);col=vignette(uv,col,u_vignette);gl_FragColor=vec4(col,1.0);} `;
+
+  function compile(gl, type, src){const sh=gl.createShader(type);gl.shaderSource(sh,src);gl.compileShader(sh);if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));return sh;}
+  function link(gl, vs, fs){const p=gl.createProgram();gl.attachShader(p,vs);gl.attachShader(p,fs);gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));return p;}
+  const vs = compile(gl, gl.VERTEX_SHADER, 'attribute vec2 a_pos;void main(){gl_Position=vec4(a_pos,0.,1.);}');
+  const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
+  const prog = link(gl, vs, fs);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog,'a_pos'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+
+  let tex = null;
+  function loadTexture(img){
+    tex && gl.deleteTexture(tex);
+    tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+  }
+
+  function draw(){
+    if(!S.img) return;
+    const w = S.img.naturalWidth, h=S.img.naturalHeight;
+    const wrap = $('#wrap');
+    const maxW = wrap.clientWidth; const scale = Math.min(1, maxW / w);
+    cv.width = Math.round(w*scale); cv.height = Math.round(h*scale);
+
+    const U = (n)=> gl.getUniformLocation(prog,n);
+    gl.viewport(0,0,cv.width,cv.height);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.uniform1i(U('u_tex'),0);
+    gl.uniform2f(U('u_res'), cv.width, cv.height);
+    const p=S.params;
+    gl.uniform1f(U('u_exposure'), p.exposure);
+    gl.uniform1f(U('u_contrast'), p.contrast);
+    gl.uniform1f(U('u_saturation'), p.saturation);
+    gl.uniform1f(U('u_temp'), p.temp);
+    gl.uniform1f(U('u_tint'), p.tint);
+    gl.uniform1f(U('u_vibrance'), p.vibrance);
+    gl.uniform1f(U('u_gamma'), p.gamma);
+    gl.uniform1f(U('u_grain'), p.grain);
+    gl.uniform1f(U('u_vignette'), p.vignette);
+    gl.uniform3f(U('u_stShadow'), p.stShadow[0], p.stShadow[1], p.stShadow[2]);
+    gl.uniform3f(U('u_stHighlight'), p.stHighlight[0], p.stHighlight[1], p.stHighlight[2]);
+    gl.uniform1f(U('u_stBalance'), p.stBalance);
+    gl.uniform1f(U('u_seed'), S.seed);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    // split overlay
+    const before = $('#beforeImg');
+    const split = $('#split');
+    if($('#splitToggle').checked){
+      before.style.display='block'; split.style.display='block';
+      before.style.clipPath = `inset(0 ${100 - S.splitX*100}% 0 0)`;
+      split.style.left = `${S.splitX*100}%`;
+    }else{ before.style.display='none'; split.style.display='none'; }
+  }
+
+  // --- UI build: presets ---
+  const presetWrap = $('#presets');
+  PRESETS.forEach(p=>{
+    const card = document.createElement('div'); card.className='card'; card.style.padding='10px';
+    const head = document.createElement('div'); head.style.display='flex'; head.style.justifyContent='space-between'; head.style.alignItems='start'; head.style.gap='8px';
+    const left = document.createElement('div');
+    left.innerHTML = `<div style="font-weight:600;font-size:14px">${p.name}</div><div style="font-size:12px;color:#6b7280">${p.desc}</div>`;
+    const btn = document.createElement('button'); btn.className='ghost'; btn.textContent='적용'; btn.onclick=()=>{ S.presetId=p.id; S.params={...p.params}; savePreset(); saveParams(); draw(); };
+    head.appendChild(left); head.appendChild(btn); card.appendChild(head);
+
+    const refHdr = document.createElement('div'); refHdr.style.display='flex'; refHdr.style.justifyContent='space-between'; refHdr.style.alignItems='center'; refHdr.style.margin='8px 0 6px';
+    const refLbl = document.createElement('div'); refLbl.textContent='레퍼런스'; refLbl.style.fontSize='12px'; refLbl.style.color='#6b7280';
+    const refInp = document.createElement('input'); refInp.type='file'; refInp.accept='image/*'; refInp.style.display='none'; const refId = 'ref-'+p.id; refInp.id=refId;
+    const refLab = document.createElement('label'); refLab.className='pill'; refLab.textContent='+ 참고 이미지'; refLab.htmlFor=refId;
+    refInp.onchange=(e)=>{ const f=e.target.files?.[0]; if(!f) return; const fr=new FileReader(); fr.onload=()=>{ S.refs[p.id]=(S.refs[p.id]||[]).concat(fr.result); localStorage.setItem('fsl.refs', JSON.stringify(S.refs)); renderRefs(); }; fr.readAsDataURL(f); };
+    refHdr.appendChild(refLbl); refHdr.appendChild(refInp); refHdr.appendChild(refLab); card.appendChild(refHdr);
+
+    const thumbs = document.createElement('div'); thumbs.className='thumbs'; card.appendChild(thumbs);
+
+    function renderRefs(){
+      thumbs.innerHTML='';
+      const arr = S.refs[p.id]||[];
+      if(arr.length===0){ const hint=document.createElement('div'); hint.className='pill'; hint.textContent='직접 보유한 스틸을 추가하세요'; thumbs.appendChild(hint); return; }
+      arr.forEach((src,i)=>{ const box=document.createElement('div'); box.style.position='relative'; const img=new Image(); img.src=src; img.className=''; img.style.height='64px'; img.style.width='96px'; img.style.objectFit='cover'; img.style.borderRadius='8px'; img.style.border='1px solid #e5e7eb'; box.appendChild(img); const del=document.createElement('button'); del.textContent='✕'; del.className='pill'; del.style.position='absolute'; del.style.top='-8px'; del.style.right='-8px'; del.onclick=()=>{ S.refs[p.id].splice(i,1); localStorage.setItem('fsl.refs', JSON.stringify(S.refs)); renderRefs(); }; box.appendChild(del); thumbs.appendChild(box); });
+    }
+    renderRefs();
+
+    presetWrap.appendChild(card);
+  });
+
+  // --- Sliders ---
+  const sliders = [
+    ['노출','exposure',-1,1,0.01],['대비','contrast',0.5,1.8,0.01],['채도','saturation',0,2,0.01],
+    ['색온도 (− 차갑게 / + 따뜻하게)','temp',-1,1,0.01],['틴트 (− 그린 / + 마젠타)','tint',-1,1,0.01],
+    ['비브란스','vibrance',-1,1,0.01],['감마','gamma',0.5,2.5,0.01],['그레인','grain',0,1,0.01],['비네팅','vignette',0,1,0.01],
+    ['스플릿톤 그림자 R','stShadowR',0,2,0.01],['스플릿톤 그림자 G','stShadowG',0,2,0.01],['스플릿톤 그림자 B','stShadowB',0,2,0.01],
+    ['스플릿톤 하이라이트 R','stHighlightR',0,2,0.01],['스플릿톤 하이라이트 G','stHighlightG',0,2,0.01],['스플릿톤 하이라이트 B','stHighlightB',0,2,0.01],
+    ['톤 밸런스 (− 그림자 / + 하이라이트)','stBalance',-1,1,0.01],
+  ];
+
+  const sliderWrap = $('#sliders');
+  function buildSliders(){
+    sliderWrap.innerHTML='';
+    sliders.forEach(([label,key,min,max,step])=>{
+      const row=document.createElement('div');
+      const lab=document.createElement('label'); lab.innerHTML = `<span>${label}</span><span id="val-${key}" style="font-variant-numeric:tabular-nums;color:#6b7280"></span>`; row.appendChild(lab);
+      const input=document.createElement('input'); input.type='range'; input.min=min; input.max=max; input.step=step; input.value=getVal(key);
+      input.oninput=(e)=>{ setVal(key, parseFloat(e.target.value)); draw(); updateLabels(); };
+      row.appendChild(input); sliderWrap.appendChild(row);
+    });
+  }
+  function getVal(key){ const p=S.params; switch(key){
+    case 'stShadowR': return p.stShadow[0]; case 'stShadowG': return p.stShadow[1]; case 'stShadowB': return p.stShadow[2];
+    case 'stHighlightR': return p.stHighlight[0]; case 'stHighlightG': return p.stHighlight[1]; case 'stHighlightB': return p.stHighlight[2];
+    default: return p[key]; }
+  }
+  function setVal(key,v){ const p=S.params; switch(key){
+    case 'stShadowR': p.stShadow[0]=v; break; case 'stShadowG': p.stShadow[1]=v; break; case 'stShadowB': p.stShadow[2]=v; break;
+    case 'stHighlightR': p.stHighlight[0]=v; break; case 'stHighlightG': p.stHighlight[1]=v; break; case 'stHighlightB': p.stHighlight[2]=v; break;
+    default: p[key]=v; }
+    saveParams();
+  }
+  function updateLabels(){ sliders.forEach(([_,key])=>{ const el=$('#val-'+key); if(!el) return; el.textContent = getVal(key).toFixed(2); }); }
+
+  // --- File IO ---
+  $('#file').addEventListener('change', (e)=>{
+    const f=e.target.files?.[0]; if(!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image(); img.onload=()=>{ S.img=img; S.imgURL=url; loadTexture(img); $('#beforeImg').src=url; $('#beforeImg').style.display='block'; $('#saveBtn').disabled=false; draw(); };
+    img.src=url;
+  });
+  $('#saveBtn').onclick=()=>{ const a=document.createElement('a'); a.href=cv.toDataURL('image/jpeg',0.95); a.download='film-style-'+Date.now()+'.jpg'; a.click(); };
+  $('#resetBtn').onclick=()=>{ const p=PRESETS.find(x=>x.id===S.presetId)||PRESETS[0]; S.params={...p.params}; saveParams(); draw(); updateLabels(); };
+
+  // split toggle & drag (touch-friendly)
+  $('#splitToggle').onchange=(e)=>{ S.split=e.target.checked; draw(); };
+  (function(){
+    const handle = $('#split .handleBtn'); const area=$('#wrap');
+    const move = (x)=>{ const r=area.getBoundingClientRect(); S.splitX=clamp((x-r.left)/r.width,0.05,0.95); draw(); };
+    const onDown = (ev)=>{
+      ev.preventDefault();
+      const mm=(e)=>move(e.touches?e.touches[0].clientX:e.clientX);
+      const up=()=>{ window.removeEventListener('mousemove',mm); window.removeEventListener('mouseup',up); window.removeEventListener('touchmove',mm); window.removeEventListener('touchend',up); };
+      window.addEventListener('mousemove',mm); window.addEventListener('mouseup',up);
+      window.addEventListener('touchmove',mm,{passive:false}); window.addEventListener('touchend',up);
+    };
+    handle.addEventListener('mousedown', onDown);
+    handle.addEventListener('touchstart', onDown, {passive:false});
+  })();
+
+  // initial UI
+  const initPreset = PRESETS.find(p=>p.id===S.presetId)||PRESETS[0]; S.params={...initPreset.params, ...(S.params||{})}; buildSliders(); updateLabels();
+  window.addEventListener('resize', draw);
+
+  // --- PWA-lite (single-file) ---
+  // Create manifest on the fly
+  const manifest = {
+    name: 'Film Style Lab', short_name:'FilmLab', start_url: '.', display:'standalone', background_color:'#ffffff', theme_color:'#111111',
+    icons:[{src:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%23111111%22/><text x=%2232%22 y=%2238%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22%23fff%22>🎞️</text></svg>',sizes:'64x64',type:'image/svg+xml'}]
+  };
+  const manifestURL = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type:'application/json'}));
+  const link = document.createElement('link'); link.rel='manifest'; link.href=manifestURL; document.head.appendChild(link);
+
+  // Register a tiny service worker to cache this page for offline
+  if('serviceWorker' in navigator){
+    const swCode = `self.addEventListener('install',e=>{e.waitUntil(caches.open('fsl-v1').then(c=>c.addAll(['./'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})`;
+    const swURL = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
+    navigator.serviceWorker.register(swURL).catch(()=>{});
+  }
+
+  // Install prompt
+  let deferred; window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferred=e; $('#installBtn').style.display='inline-block'; });
+  $('#installBtn').onclick=()=>{ if(deferred){ deferred.prompt(); } };
+})();
+</script>
+</body>
+</html>
