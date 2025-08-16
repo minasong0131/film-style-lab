@@ -281,7 +281,7 @@
   // Presets (업데이트: 새 파라미터 포함)
   document.querySelectorAll('.preset-btn').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      if(!original) return;
+      if(!previewImage) return;
       const f=btn.dataset.filter;
       const sets={exp:0,bright:0,contrast:0,satur:0,vibr:0,hue:0,temp:0,tint:0,stShHue:-20,stShSat:20,stHiHue:20,stHiSat:15,stBal:0,gainR:0,gainG:0,gainB:0,curveS:0,curveM:0,curveH:0};
       if(f==='wes')   Object.assign(sets,{exp:10,bright:5,contrast:20,satur:25,vibr:15,hue:5,temp:12,tint:8, stShHue:-10,stShSat:18, stHiHue:30,stHiSat:10, stBal:-10, gainR:4,gainG:0,gainB:-2, curveS:5,curveM:8,curveH:-2});
@@ -289,14 +289,14 @@
       if(f==='lala')  Object.assign(sets,{exp:5,bright:6,contrast:15,satur:35,vibr:12,hue:8,temp:-10,tint:6, stShHue:-30,stShSat:12, stHiHue:10,stHiSat:8,  stBal:0,  gainR:0,gainG:2,gainB:6,  curveS:-5,curveM:5,curveH:8});
       if(f==='matrix')Object.assign(sets,{exp:0,bright:0,contrast:28,satur:-45,vibr:-20,hue:120,temp:-6,tint:-18, stShHue:140,stShSat:18, stHiHue:110,stHiSat:10, stBal:5,  gainR:-10,gainG:0,gainB:6, curveS:8,curveM:-8,curveH:6});
       if(f==='her')   Object.assign(sets,{exp:0,bright:5,contrast:0,satur:20,vibr:10,hue:-5,temp:20,tint:12, stShHue:-5,stShSat:10,  stHiHue:15,stHiSat:12, stBal:-5, gainR:6,gainG:0,gainB:-2, curveS:-2,curveM:6,curveH:0});
-      if(f==='inception') Object.assign(sets,{exp:0,contrast:40,satur:-10,temp:-20,tint:5,hue:0,vibr:10, stShHue:200, stShSat:20, stHiHue:40, stHiSat:10, stBal:0, cbR:10, cbG:-5, cbB:15, curveSh:0, curveMi:10, curveHi:20});
-      if(f==='amelie') Object.assign(sets,{exp:5,contrast:-10,satur:30,temp:15,tint:10,hue:0,vibr:30, stShHue:90, stShSat:20, stHiHue:40, stHiSat:10, stBal:-20, cbR:10, cbG:5, cbB:-10, curveSh:-5, curveMi:10, curveHi:5});
-      if(f==='madmax') Object.assign(sets,{exp:10,contrast:50,satur:40,temp:30,tint:0,hue:-10,vibr:40, stShHue:200, stShSat:50, stHiHue:40, stHiSat:50, stBal:10, cbR:20, cbG:-10, cbB:10, curveSh:10, curveMi:15, curveHi:25});
-      if(f==='grandbudapest') Object.assign(sets,{exp:10,contrast:-10,satur:40,temp:20,tint:20,hue:5,vibr:25, stShHue:320, stShSat:20, stHiHue:300, stHiSat:15, stBal:0, cbR:15, cbG:0, cbB:10, curveSh:-5, curveMi:5, curveHi:15});
-      if(f==='joker') Object.assign(sets,{exp:0,contrast:30,satur:30,temp:5,tint:-10,hue:0,vibr:20, stShHue:120, stShSat:40, stHiHue:60, stHiSat:30, stBal:0, cbR:-5, cbG:10, cbB:5, curveSh:0, curveMi:15, curveHi:10});
-      if(f==='revenant') Object.assign(sets,{exp:-10,contrast:20,satur:-20,temp:-30,tint:0,hue:0,vibr:-10, stShHue:220, stShSat:20, stHiHue:200, stHiSat:10, stBal:0, cbR:0, cbG:5, cbB:15, curveSh:-5, curveMi:0, curveHi:5});
+      if(f==='inception') Object.assign(sets,{exp:0,contrast:40,satur:-10,temp:-20,tint:5,hue:0,vibr:10, stShHue:200, stShSat:20, stHiHue:40, stHiSat:10, stBal:0, gainR:10, gainG:-5, gainB:15, curveS:0, curveM:10, curveH:20});
+      if(f==='amelie') Object.assign(sets,{exp:5,contrast:-10,satur:30,temp:15,tint:10,hue:0,vibr:30, stShHue:90, stShSat:20, stHiHue:40, stHiSat:10, stBal:-20, gainR:10, gainG:5, gainB:-10, curveS:-5, curveM:10, curveH:5});
+      if(f==='madmax') Object.assign(sets,{exp:10,contrast:50,satur:40,temp:30,tint:0,hue:-10,vibr:40, stShHue:200, stShSat:50, stHiHue:40, stHiSat:50, stBal:10, gainR:20, gainG:-10, gainB:10, curveS:10, curveM:15, curveH:25});
+      if(f==='grandbudapest') Object.assign(sets,{exp:10,contrast:-10,satur:40,temp:20,tint:20,hue:5,vibr:25, stShHue:320, stShSat:20, stHiHue:300, stHiSat:15, stBal:0, gainR:15, gainG:0, gainB:10, curveS:-5, curveM:5, curveH:15});
+      if(f==='joker') Object.assign(sets,{exp:0,contrast:30,satur:30,temp:5,tint:-10,hue:0,vibr:20, stShHue:120, stShSat:40, stHiHue:60, stHiSat:30, stBal:0, gainR:-5, gainG:10, gainB:5, curveS:0, curveM:15, curveH:10});
+      if(f==='revenant') Object.assign(sets,{exp:-10,contrast:20,satur:-20,temp:-30,tint:0,hue:0,vibr:-10, stShHue:220, stShSat:20, stHiHue:200, stHiSat:10, stBal:0, gainR:0, gainG:5, gainB:15, curveS:-5, curveM:0, curveH:5});
       for(const k in sets){ const el=document.getElementById(k); if(el) el.value=sets[k]; }
-      applyFilters();
+      scheduleApply();
     });
   });
 
@@ -419,5 +419,6 @@
 </script>
 </body>
 </html>
+
 
 
