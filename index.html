@@ -39,6 +39,12 @@
       <button class="preset-btn" data-filter="lala">La La Land</button>
       <button class="preset-btn" data-filter="matrix">Matrix</button>
       <button class="preset-btn" data-filter="her">Her</button>
+      <button class="preset-btn" data-filter="inception">Inception</button>
+      <button class="preset-btn" data-filter="amelie">Amélie</button>
+      <button class="preset-btn" data-filter="madmax">Mad Max: Fury Road</button>
+      <button class="preset-btn" data-filter="grandbudapest">Grand Budapest Hotel</button>
+      <button class="preset-btn" data-filter="joker">Joker</button>
+      <button class="preset-btn" data-filter="revenant">The Revenant</button>
     </div>
 
     <div class="panel" style="text-align:center">
@@ -242,6 +248,12 @@
       if(f==='lala')  Object.assign(sets,{exp:5,bright:6,contrast:15,satur:35,vibr:12,hue:8,temp:-10,tint:6, stShHue:-30,stShSat:12, stHiHue:10,stHiSat:8,  stBal:0,  gainR:0,gainG:2,gainB:6,  curveS:-5,curveM:5,curveH:8});
       if(f==='matrix')Object.assign(sets,{exp:0,bright:0,contrast:28,satur:-45,vibr:-20,hue:120,temp:-6,tint:-18, stShHue:140,stShSat:18, stHiHue:110,stHiSat:10, stBal:5,  gainR:-10,gainG:0,gainB:6, curveS:8,curveM:-8,curveH:6});
       if(f==='her')   Object.assign(sets,{exp:0,bright:5,contrast:0,satur:20,vibr:10,hue:-5,temp:20,tint:12, stShHue:-5,stShSat:10,  stHiHue:15,stHiSat:12, stBal:-5, gainR:6,gainG:0,gainB:-2, curveS:-2,curveM:6,curveH:0});
+      if(f==='inception') Object.assign(sets,{exp:0,contrast:40,satur:-10,temp:-20,tint:5,hue:0,vibr:10, splitSh:200, splitSs:20, splitHi:40, splitHs:10, splitBal:0, cbR:10, cbG:-5, cbB:15, curveSh:0, curveMi:10, curveHi:20});
+      if(f==='amelie') Object.assign(sets,{exp:5,contrast:-10,satur:30,temp:15,tint:10,hue:0,vibr:30, splitSh:90, splitSs:20, splitHi:40, splitHs:10, splitBal:-20, cbR:10, cbG:5, cbB:-10, curveSh:-5, curveMi:10, curveHi:5});
+      if(f==='madmax') Object.assign(sets,{exp:10,contrast:50,satur:40,temp:30,tint:0,hue:-10,vibr:40, splitSh:200, splitSs:50, splitHi:40, splitHs:50, splitBal:10, cbR:20, cbG:-10, cbB:10, curveSh:10, curveMi:15, curveHi:25});
+      if(f==='grandbudapest') Object.assign(sets,{exp:10,contrast:-10,satur:40,temp:20,tint:20,hue:5,vibr:25, splitSh:320, splitSs:20, splitHi:300, splitHs:15, splitBal:0, cbR:15, cbG:0, cbB:10, curveSh:-5, curveMi:5, curveHi:15});
+      if(f==='joker') Object.assign(sets,{exp:0,contrast:30,satur:30,temp:5,tint:-10,hue:0,vibr:20, splitSh:120, splitSs:40, splitHi:60, splitHs:30, splitBal:0, cbR:-5, cbG:10, cbB:5, curveSh:0, curveMi:15, curveHi:10});
+      if(f==='revenant') Object.assign(sets,{exp:-10,contrast:20,satur:-20,temp:-30,tint:0,hue:0,vibr:-10, splitSh:220, splitSs:20, splitHi:200, splitHs:10, splitBal:0, cbR:0, cbG:5, cbB:15, curveSh:-5, curveMi:0, curveHi:5});
       for(const k in sets){ const el=document.getElementById(k); if(el) el.value=sets[k]; }
       applyFilters();
     });
@@ -263,3 +275,4 @@
 </script>
 </body>
 </html>
+
