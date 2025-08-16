@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Film Style Lab — Mobile</title>
+  <title>Film Style Lab — Mobile v2</title>
   <meta name="theme-color" content="#111111" />
   <style>
     html,body{height:100%}body{margin:0;background:linear-gradient(#f8fafc,#fff);color:#111;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
@@ -23,6 +23,7 @@
     .thumbs img{height:64px;width:96px;object-fit:cover;border-radius:8px;border:1px solid #e5e7eb}
     .splitHandle{position:absolute;top:0;bottom:0;width:2px;background:rgba(255,255,255,.9);box-shadow:0 0 0 1px rgba(0,0,0,.15)}
     .handleBtn{position:absolute;top:50%;left:-18px;transform:translateY(-50%);width:36px;height:36px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+    .hint{margin-top:10px;padding:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff}
   </style>
   <!-- React & ReactDOM from CDN -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -33,8 +34,9 @@
     <div class="container" style="display:flex;gap:8px;align-items:center;padding:12px 16px">
       <strong style="font-size:16px">🎞️ Film Style Lab</strong>
       <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
-        <input id="file" type="file" accept="image/*" capture="environment" style="display:none" />
+        <input id="file" type="file" accept="image/*,.jpg,.jpeg,.png,.webp" capture="environment" style="display:none" />
         <label for="file">사진 열기</label>
+        <button id="openBtn" class="ghost" title="파일 선택 창이 안 뜨면 이걸 눌러주세요">파일 선택</button>
         <button id="saveBtn" disabled>이미지 저장</button>
         <button id="installBtn" class="ghost" style="display:none">홈 화면에 추가</button>
       </div>
@@ -42,6 +44,8 @@
   </header>
 
   <main class="container" style="padding:16px 16px 40px">
+    <div id="inappHint" class="hint" style="display:none"><b>알림:</b> 일부 인앱 브라우저(카카오톡/인스타/네이버 등)에선 파일 선택이 막힐 수 있어요. 오른쪽 상단 메뉴에서 <b>기본 브라우저로 열기</b>를 사용하거나, <b>Chrome/Safari</b>로 다시 열어주세요.</div>
+
     <div class="row">
       <!-- Presets -->
       <section class="card" style="padding:12px">
@@ -87,6 +91,13 @@
 
 <script>
 (function(){
+  // detect in-app browsers that often block file input
+  var ua = navigator.userAgent || '';
+  if (/(KAKAOTALK|NAVER|FBAN|FBAV|Instagram)/i.test(ua)) {
+    var hint = document.getElementById('inappHint');
+    if (hint) hint.style.display = 'block';
+  }
+
   // --- State & Utilities ---
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -179,7 +190,6 @@
 
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
-    // split overlay
     const before = $('#beforeImg');
     const split = $('#split');
     if($('#splitToggle').checked){
@@ -203,7 +213,7 @@
     const refLbl = document.createElement('div'); refLbl.textContent='레퍼런스'; refLbl.style.fontSize='12px'; refLbl.style.color='#6b7280';
     const refInp = document.createElement('input'); refInp.type='file'; refInp.accept='image/*'; refInp.style.display='none'; const refId = 'ref-'+p.id; refInp.id=refId;
     const refLab = document.createElement('label'); refLab.className='pill'; refLab.textContent='+ 참고 이미지'; refLab.htmlFor=refId;
-    refInp.onchange=(e)=>{ const f=e.target.files?.[0]; if(!f) return; const fr=new FileReader(); fr.onload=()=>{ S.refs[p.id]=(S.refs[p.id]||[]).concat(fr.result); localStorage.setItem('fsl.refs', JSON.stringify(S.refs)); renderRefs(); }; fr.readAsDataURL(f); };
+    refInp.onchange=(e)=>{ const fs=(e && e.target && e.target.files)?e.target.files:null; const f=fs&&fs[0]; if(!f) return; const fr=new FileReader(); fr.onload=()=>{ S.refs[p.id]=(S.refs[p.id]||[]).concat(fr.result); localStorage.setItem('fsl.refs', JSON.stringify(S.refs)); renderRefs(); }; fr.readAsDataURL(f); };
     refHdr.appendChild(refLbl); refHdr.appendChild(refInp); refHdr.appendChild(refLab); card.appendChild(refHdr);
 
     const thumbs = document.createElement('div'); thumbs.className='thumbs'; card.appendChild(thumbs);
@@ -254,19 +264,23 @@
   function updateLabels(){ sliders.forEach(([_,key])=>{ const el=$('#val-'+key); if(!el) return; el.textContent = getVal(key).toFixed(2); }); }
 
   // --- File IO ---
-  $('#file').addEventListener('change', (e)=>{
-    const f=e.target.files?.[0]; if(!f) return;
-    const url = URL.createObjectURL(f);
-    const img = new Image(); img.onload=()=>{ S.img=img; S.imgURL=url; loadTexture(img); $('#beforeImg').src=url; $('#beforeImg').style.display='block'; $('#saveBtn').disabled=false; draw(); };
+  const openBtn = document.getElementById('openBtn');
+  if(openBtn){ openBtn.onclick = function(){ try{ document.getElementById('file').click(); } catch(e){ alert('파일 선택을 열 수 없어요. Chrome/Safari에서 다시 열어보세요.'); } }; }
+
+  document.getElementById('file').addEventListener('change', function(e){
+    var files = e && e.target && e.target.files ? e.target.files : null;
+    var f = files && files[0]; if(!f){ return; }
+    var url = URL.createObjectURL(f);
+    var img = new Image(); img.onload=function(){ S.img=img; S.imgURL=url; loadTexture(img); document.getElementById('beforeImg').src=url; document.getElementById('beforeImg').style.display='block'; document.getElementById('saveBtn').disabled=false; draw(); };
     img.src=url;
   });
-  $('#saveBtn').onclick=()=>{ const a=document.createElement('a'); a.href=cv.toDataURL('image/jpeg',0.95); a.download='film-style-'+Date.now()+'.jpg'; a.click(); };
-  $('#resetBtn').onclick=()=>{ const p=PRESETS.find(x=>x.id===S.presetId)||PRESETS[0]; S.params={...p.params}; saveParams(); draw(); updateLabels(); };
+  document.getElementById('saveBtn').onclick=function(){ var a=document.createElement('a'); a.href=cv.toDataURL('image/jpeg',0.95); a.download='film-style-'+Date.now()+'.jpg'; a.click(); };
+  document.getElementById('resetBtn').onclick=function(){ var p=PRESETS.find(function(x){return x.id===S.presetId;})||PRESETS[0]; S.params=Object.assign({}, p.params); saveParams(); draw(); updateLabels(); };
 
   // split toggle & drag (touch-friendly)
-  $('#splitToggle').onchange=(e)=>{ S.split=e.target.checked; draw(); };
+  document.getElementById('splitToggle').onchange=function(e){ S.split=e.target.checked; draw(); };
   (function(){
-    const handle = $('#split .handleBtn'); const area=$('#wrap');
+    const handle = document.querySelector('#split .handleBtn'); const area=document.getElementById('wrap');
     const move = (x)=>{ const r=area.getBoundingClientRect(); S.splitX=clamp((x-r.left)/r.width,0.05,0.95); draw(); };
     const onDown = (ev)=>{
       ev.preventDefault();
@@ -284,24 +298,18 @@
   window.addEventListener('resize', draw);
 
   // --- PWA-lite (single-file) ---
-  // Create manifest on the fly
-  const manifest = {
-    name: 'Film Style Lab', short_name:'FilmLab', start_url: '.', display:'standalone', background_color:'#ffffff', theme_color:'#111111',
-    icons:[{src:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%23111111%22/><text x=%2232%22 y=%2238%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22%23fff%22>🎞️</text></svg>',sizes:'64x64',type:'image/svg+xml'}]
-  };
+  const manifest = { name: 'Film Style Lab', short_name:'FilmLab', start_url: '.', display:'standalone', background_color:'#ffffff', theme_color:'#111111', icons:[{src:'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%23111111%22/><text x=%2232%22 y=%2238%22 font-size=%2230%22 text-anchor=%22middle%22 fill=%22%23fff%22>🎞️</text></svg>',sizes:'64x64',type:'image/svg+xml'}] };
   const manifestURL = URL.createObjectURL(new Blob([JSON.stringify(manifest)], {type:'application/json'}));
   const link = document.createElement('link'); link.rel='manifest'; link.href=manifestURL; document.head.appendChild(link);
 
-  // Register a tiny service worker to cache this page for offline
   if('serviceWorker' in navigator){
     const swCode = `self.addEventListener('install',e=>{e.waitUntil(caches.open('fsl-v1').then(c=>c.addAll(['./'])))});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)))})`;
     const swURL = URL.createObjectURL(new Blob([swCode], {type:'text/javascript'}));
     navigator.serviceWorker.register(swURL).catch(()=>{});
   }
 
-  // Install prompt
-  let deferred; window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferred=e; $('#installBtn').style.display='inline-block'; });
-  $('#installBtn').onclick=()=>{ if(deferred){ deferred.prompt(); } };
+  let deferred; window.addEventListener('beforeinstallprompt',(e)=>{ e.preventDefault(); deferred=e; document.getElementById('installBtn').style.display='inline-block'; });
+  document.getElementById('installBtn').onclick=function(){ if(deferred){ deferred.prompt(); } };
 })();
 </script>
 </body>
